@@ -25,6 +25,6 @@ Thumbs.db
 
 # Configuración local (opcional, si quieres que cada uno tenga su propio puerto)
 # appsettings.Development.json
-repomix-output.xml
+repomix**.xml
 
 logs/*

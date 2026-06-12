@@ -11,6 +11,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace serverC_
 {
+    //clase que mapea el appsettings.json(archivo de configuracion externa)
+    //  para facilitar la lectura de configuración
     public class ServerConfig
     {
         public int Port { get; set; } = 8080;
@@ -35,23 +37,41 @@ namespace serverC_
 
         // Cola thread-safe para desacoplar el logging del procesamiento de requests
         static readonly ConcurrentQueue<string> _logQueue = new();
-        static readonly CancellationTokenSource _logCts = new();
-
+        
+        static readonly CancellationTokenSource _cts = new();
+        
+        //necesita await para no bloquearse esperando conexiones, entonces Main debe ser async Task
         static async Task Main(string[] args)
         {
-            // 1. LEER CONFIGURACIÓN EXTERNA (nativa de .NET, sin parsear texto plano)
+            // LEER CONFIGURACIÓN EXTERNA (nativa de .NET, sin parsear texto plano)
+            //    reloadOnChange: false porque el puerto y carpetas se definen al inicio.
+            //Lee el JSON de configuración y lo convierte en tu objeto ServerConfig
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
                 .Build();
-
+            
+            // Binding: convierte el JSON en nuestro objeto automáticamente
             _config = configuration.GetSection("ServerConfig").Get<ServerConfig>() ?? new ServerConfig();
+
+            // _logDirectoryPath: variable privada (por el _) que guarda la ruta absoluta de los logs
             _logDirectoryPath = Path.GetFullPath(_config.LogDirectory);
 
+            //crear carpets si no existen
             Directory.CreateDirectory(_config.WebRoot);
+
             Directory.CreateDirectory(_logDirectoryPath);
 
-            // 2. ARRANCAR LOGGER EN SEGUNDO PLANO (desacoplado del procesamiento de requests)
+            // CAPTURAR Ctrl+C
+            Console.CancelKeyPress += (sender, e) =>
+            {
+                e.Cancel = true;        // No cerrar de golpe
+                _cts.Cancel();          // Avisar a todos los bucles que paren
+                Console.WriteLine("Señal de detención recibida. Cerrando servidor...");
+            };
+
+            // ARRANCAR LOGGER EN SEGUNDO PLANO (desacoplado del procesamiento de requests)
+            //Arranca el hilo de fondo que escribe logs
             StartBackgroundLogger();
 
             Console.WriteLine($"🚀 Servidor iniciando en puerto: {_config.Port}");
@@ -59,19 +79,38 @@ namespace serverC_
             Console.WriteLine($"📝 Logs en: {_logDirectoryPath}");
             Console.WriteLine("Presiona Ctrl+C para detener.");
 
-            // 3. CREAR SOCKET TCP (directamente en capa de transporte)
+            // CREAR SOCKET TCP (directamente en capa de transporte)
+            //Creamos un socket TCP nativo, lo ligamos al puerto configurado externamente,
+            // y definimos un backlog de 1000 conexiones pendientes
             var listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             listener.Bind(new IPEndPoint(IPAddress.Any, _config.Port));
-            listener.Listen(1000); // Backlog de conexiones pendientes
+            listener.Listen(1000); // // ← BACKLOG: fila de espera del SO para conexiones entrantes
 
-            // 4. BUCLE INFINITO ASÍNCRONO (acepta conexiones sin bloquear)
-            while (true)
+            // BUCLE mientras no me envien token de cancelacion ASÍNCRONO (acepta conexiones sin bloquear)
+            // BUCLE PRINCIPAL CON TOKEN
+            try
             {
-                var clientSocket = await listener.AcceptAsync();
-
-                // Fire-and-forget: procesa cada cliente en paralelo sin bloquear el bucle principal
-                _ = HandleClientAsync(clientSocket);
+                while (!_cts.Token.IsCancellationRequested)
+                {
+                    var clientSocket = await listener.AcceptAsync(_cts.Token);  // ← TOKEN ACA
+                    _ = HandleClientAsync(clientSocket);
+                }
             }
+            catch (OperationCanceledException)
+            {
+                
+                Console.WriteLine("Socket listener detenido.");
+            }
+            finally
+            {
+                listener.Close();  // Cerrar
+            }
+
+            // ESPERAR A QUE EL LOGGER TERMINE (opcional pero prolijo)
+            await Task.Delay(300);  // Darle tiempo al logger que vacíe la cola
+
+            Console.WriteLine("Servidor cerrado correctamente.");
+
         }
 
         // ============================================================
@@ -82,15 +121,15 @@ namespace serverC_
         {
             _ = Task.Run(async () =>
             {
-                while (!_logCts.Token.IsCancellationRequested)
+                while (!_cts.Token.IsCancellationRequested)//mientras no apriete Ctrl+C para cancelar el token, sigue corriendo el logger
                 {
                     // Vaciar toda la cola en disco de una sola vez (batch write)
                     var batch = new StringBuilder();
                     int count = 0;
 
-                    while (_logQueue.TryDequeue(out var logEntry))
+                    while (_logQueue.TryDequeue(out var logEntry))//saco todo de la cola
                     {
-                        batch.Append(logEntry);
+                        batch.Append(logEntry);//Batch = lote, grupo de logs que escribo juntos para optimizar I/O
                         count++;
                     }
 
@@ -101,7 +140,7 @@ namespace serverC_
 
                         try
                         {
-                            File.AppendAllText(logFile, batch.ToString());
+                            File.AppendAllText(logFile, batch.ToString());//Escribe todo el batch de logs de una vez
                         }
                         catch (Exception ex)
                         {
@@ -110,7 +149,7 @@ namespace serverC_
                     }
 
                     // Esperar antes de revisar la cola de nuevo
-                    await Task.Delay(100, _logCts.Token);
+                    await Task.Delay(100, _cts.Token);
                 }
             });
         }
@@ -342,7 +381,8 @@ namespace serverC_
 
             logEntry.AppendLine(new string('-', 50));
 
-            // Encolar en memoria (O(1), thread-safe, NO bloquea)
+            // Encolar en memoria, thread-safe, NO bloquea)
+            // Varios hilos pueden hacer esto al mismo tiempo sin pisarse
             _logQueue.Enqueue(logEntry.ToString());
 
             return Task.CompletedTask;
