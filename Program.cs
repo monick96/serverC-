@@ -74,10 +74,8 @@ namespace serverC_
             //Arranca el hilo de fondo que escribe logs
             StartBackgroundLogger();
 
-            Console.WriteLine($"🚀 Servidor iniciando en puerto: {_config.Port}");
-            Console.WriteLine($"📁 Carpeta de archivos: {Path.GetFullPath(_config.WebRoot)}");
-            Console.WriteLine($"📝 Logs en: {_logDirectoryPath}");
-            Console.WriteLine("Presiona Ctrl+C para detener.");
+            Console.WriteLine($"* Servidor iniciando en puerto: {_config.Port}");
+            Console.WriteLine("* Presiona Ctrl+C para detener.");
 
             // CREAR SOCKET TCP (directamente en capa de transporte)
             //Creamos un socket TCP nativo, lo ligamos al puerto configurado externamente,
