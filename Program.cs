@@ -19,7 +19,10 @@ namespace serverC_
         public string WebRoot { get; set; } = "wwwroot";
         public string LogDirectory { get; set; } = "logs";
     }
-
+    
+    // Contenedor de datos: guarda los campos de una solicitud HTTP
+    // ya separados (método, ruta, query, headers, body) para usarlos
+    // después sin tener que volver a parsear el socket.
     public class HttpRequest
     {
         public string Method { get; set; } = "";
@@ -119,7 +122,8 @@ namespace serverC_
         {
             _ = Task.Run(async () =>
             {
-                while (!_cts.Token.IsCancellationRequested)//mientras no apriete Ctrl+C para cancelar el token, sigue corriendo el logger
+                //mientras no haga Ctrl+C , sigue corriendo el logger
+                while (!_cts.Token.IsCancellationRequested)
                 {
                     // Vaciar toda la cola en disco de una sola vez (batch write)
                     var batch = new StringBuilder();
