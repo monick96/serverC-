@@ -400,7 +400,9 @@ namespace serverC_
                 ".css" => "text/css",
                 ".js" => "application/javascript",
                 ".json" => "application/json",
-                _ => "application/octet-stream"
+                //si tenemos el archivo pero no esta el tipo en esta lista,
+                //  el nvegador te permite descargarlo
+                _ => "application/octet-stream" 
             };
         }
     }
