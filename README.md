@@ -21,7 +21,7 @@
 
 ## 📝 Descripción
 
-Este proyecto implementa un **servidor HTTP/1.1 desde cero**, operando directamente sobre la **capa de transporte (TCP)** mediante sockets nativos del sistema operativo. No se utilizó ningún framework web de alto nivel (como ASP.NET, Kestrel o HttpListener); en su lugar, se parsean manualmente las solicitudes HTTP a partir de los bytes recibidos por el socket.
+Este proyecto implementa un **servidor HTTP/1.1**, operando directamente sobre la **capa de transporte (TCP)** mediante sockets nativos del sistema operativo. No se utilizó ningún framework web de alto nivel (como ASP.NET, Kestrel o HttpListener); en su lugar, se parsean manualmente las solicitudes HTTP a partir de los bytes recibidos por el socket.
 
 El servidor es **concurrente y asíncrono**, capaz de atender un número indefinido de conexiones simultáneas utilizando un pool reducido de hilos gracias al modelo `async/await` de .NET.
 
@@ -55,7 +55,7 @@ El servidor es **concurrente y asíncrono**, capaz de atender un número indefin
 ### 6. Logging
 - Un archivo `.log` por día (`yyyy-MM-dd.log`).
 - Registra: **IP de origen**, **timestamp**, **método HTTP**, **ruta**, **query string** y **body de POST**.
-- Acceso thread-safe mediante `lock` para evitar corrupción de archivo en escrituras concurrentes.
+- Acceso thread-safe mediante `ConcurrentQueue` para evitar corrupción de archivo en escrituras concurrentes.
 
 ---
 
@@ -117,10 +117,8 @@ dotnet run
 ### Salida esperada en consola
 
 ```
- Servidor iniciando en puerto: 8080
- Carpeta de archivos: C:\...\serverC-\wwwroot
- Logs en: C:\...\serverC-\logs
- Presiona Ctrl+C para detener.
+ * Servidor iniciando en puerto: 8080
+ * Presiona Ctrl+C para detener.
 ```
 
 ### Acceder al servidor
@@ -134,7 +132,7 @@ Abrir el navegador en: `http://localhost:8080`
 ```
 GET http://localhost:8080/
 ```
-- **Esperado:** Carga `index.html` con el formulario.
+- **Esperado:** Carga `index.html` con el H1
 
 ### 2. GET - Archivo estático (CSS)
 ```
