@@ -106,7 +106,7 @@ namespace serverC_
                 listener.Close();  // Cerrar
             }
 
-            // ESPERAR A QUE EL LOGGER TERMINE (opcional pero prolijo)
+            // ESPERAR A QUE EL LOGGER TERMINE DE ESCRIBIR LOS LOGS PENDIENTES ANTES DE SALIR
             await Task.Delay(300);  // Darle tiempo al logger que vacíe la cola
 
             Console.WriteLine("Servidor cerrado correctamente.");
@@ -400,13 +400,6 @@ namespace serverC_
                 ".css" => "text/css",
                 ".js" => "application/javascript",
                 ".json" => "application/json",
-                ".png" => "image/png",
-                ".jpg" => "image/jpeg",
-                ".jpeg" => "image/jpeg",
-                ".gif" => "image/gif",
-                ".svg" => "image/svg+xml",
-                ".ico" => "image/x-icon",
-                ".txt" => "text/plain",
                 _ => "application/octet-stream"
             };
         }
