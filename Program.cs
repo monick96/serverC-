@@ -93,7 +93,7 @@ namespace serverC_
             {
                 while (!_cts.Token.IsCancellationRequested)
                 {
-                    var clientSocket = await listener.AcceptAsync(_cts.Token);  // ← TOKEN ACA
+                    var clientSocket = await listener.AcceptAsync(_cts.Token);  // ← TOKEN o CLIENTE
                     _ = HandleClientAsync(clientSocket);
                 }
             }
@@ -102,9 +102,13 @@ namespace serverC_
                 
                 Console.WriteLine("Socket listener detenido.");
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error inesperado: {ex.Message}"); //para cualquier otro error
+            }
             finally
             {
-                listener.Close();  // Cerrar
+                listener.Close();  // Cerrar y liberar puerto
             }
 
             // ESPERAR A QUE EL LOGGER TERMINE DE ESCRIBIR LOS LOGS PENDIENTES ANTES DE SALIR
