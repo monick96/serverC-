@@ -150,7 +150,7 @@ namespace serverC_
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"⚠️ Error escribiendo log: {ex.Message}");
+                            Console.WriteLine($"Error escribiendo log: {ex.Message}");
                         }
                     }
 
@@ -173,7 +173,7 @@ namespace serverC_
                     // Parsear la solicitud HTTP manualmente desde los bytes del socket
                     var request = await ParseHttpRequestAsync(networkStream);
 
-                    // Ignorar conexiones vacías (keep-alive cortado, favicon sin método, etc.)
+                    // Ignorar conexiones vacías )
                     if (string.IsNullOrEmpty(request.Method))
                         return;
 
