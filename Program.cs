@@ -406,6 +406,7 @@ namespace serverC_
                 ".css" => "text/css",
                 ".js" => "application/javascript",
                 ".json" => "application/json",
+                ".png" => "image/png",
                 //si tenemos el archivo pero no esta el tipo en esta lista,
                 //  el nvegador te permite descargarlo
                 _ => "application/octet-stream" 
