@@ -202,7 +202,7 @@ namespace serverC_
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error con cliente {clientIp}: {ex.Message}");
+                Console.WriteLine($"Error con cliente {clientIp}: {ex.Message}");
             }
         }
 
