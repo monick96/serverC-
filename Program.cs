@@ -43,7 +43,7 @@ namespace serverC_
         
         static readonly CancellationTokenSource _cts = new();
         
-        //necesita await para no bloquearse esperando conexiones, entonces Main debe ser async Task
+        //necesita async para no bloquearse esperando conexiones, entonces Main debe ser async Task
         static async Task Main(string[] args)
         {
             // LEER CONFIGURACIÓN EXTERNA (nativa de .NET, sin parsear texto plano)
